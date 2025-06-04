@@ -51,6 +51,7 @@ def kappa_explain(
     method="DEFAULT",
     smalltol=DEFSMALLTOL,
     submatrix=False,
+    filename=None,
 ):
     #
     #   Help function info
@@ -92,6 +93,10 @@ def kappa_explain(
                           machine precision will be incorporated.
     submatrix  (optional) Whether to postprocess the explanation down to
                           a smaller submatrix.  Default is False.
+    filename   (optional) Name of the file to which the explanation is
+                          written.  By default the name consists of the
+                          model name suffixed by "_kappaexplain" with an
+                          extension determined by the explanation type.
     Returns:              For all method settings except ANGLES, returns
                           the model that consists of the explanation.
                           If the method is ANGLES, returns a list of tuples
@@ -176,7 +181,7 @@ def kappa_explain(
         # routine to create the explanation.
         #
         resmodel, maxmult, minmult = build_singleton_resmodel(explmodel, expltype)
-        illcond_report(resmodel, model.ModelName, expltype, maxmult, minmult)
+        illcond_report(resmodel, model.ModelName, expltype, maxmult, minmult, filename)
         return resmodel
     #
     #   Minimize the violations of B'y = 0 constraints.  Do not relax
@@ -526,6 +531,7 @@ def kappa_explain(
         expltype,
         max(yvaldict.values()),
         min(yvaldict.values()),
+        filename,
     )
     if method == ANGLES:
         return ([], [], None)  # Compatibility with method=ANGLES
@@ -1110,14 +1116,15 @@ def kappa_stats(model, data, KappaExact):
 #
 #   Write out the final explanation, print summary info.
 #
-def illcond_report(resmodel, modelname, expltype, maxabsmult, minabsmult):
+def illcond_report(resmodel, modelname, expltype, maxabsmult, minabsmult, filename=None):
     resmodel.setObjective(0)
-    if modelname == "":
-        modelname = "model"
-    if expltype == BYROWS:
-        filename = modelname + "_kappaexplain.lp"
-    else:
-        filename = modelname + "_kappaexplain.mps"
+    if filename is None:
+        if modelname == "":
+            modelname = "model"
+        if expltype == BYROWS:
+            filename = modelname + "_kappaexplain.lp"
+        else:
+            filename = modelname + "_kappaexplain.mps"
     resmodel.write(filename)
     #
     #   Final info
