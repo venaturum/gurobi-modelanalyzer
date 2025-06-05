@@ -29,6 +29,7 @@ class TestExplainer(unittest.TestCase):
         output_files = [
             cwd.joinpath("testmodel_kappaexplain.lp"),
             cwd.joinpath("testmodel_kappaexplain.mps"),
+            cwd.joinpath("myname.lp"),
         ]
         for file in output_files:
             if file.exists():
@@ -80,6 +81,12 @@ class TestExplainer(unittest.TestCase):
         lpfile = cwd.joinpath("testmodel_kappaexplain.lp")
         assert not lpfile.exists()
         kappa_explain(self.model, submatrix=True)
+        assert lpfile.exists()
+
+    def test_custom_filename(self):
+        lpfile = cwd.joinpath("myname.lp")
+        assert not lpfile.exists()
+        kappa_explain(self.model, filename="myname.lp")
         assert lpfile.exists()
 
     #

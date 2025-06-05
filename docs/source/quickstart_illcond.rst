@@ -77,6 +77,8 @@ file format.  Row based explanations are written in LP format, while column
 based explanations are written in MPS format.   The file name consists of
 the name of the model as specified in the gurobipy ``Model.modelName`` attribute,
 suffixed by ``"_kappaexplain"``, followed by the file format (.lp or .mps).
+You can override this default by providing a ``filename`` argument to
+``kappa_explain``.
 The method also returns the model associated with the LP or MPS file that
 was written.
 

@@ -6,7 +6,7 @@ API Reference
 
 .. _APIkappa_explainLabel:
 
-.. py:function:: gurobi_modelanalyzer.kappa_explain(model, data=None, KappaExact=-1, prmfile=None, relobjtype="LP", expltype="ROWS", method="DEFAULT", smalltol=1e-13, submatrix=False)
+.. py:function:: gurobi_modelanalyzer.kappa_explain(model, data=None, KappaExact=-1, prmfile=None, relobjtype="LP", expltype="ROWS", method="DEFAULT", smalltol=1e-13, submatrix=False, filename=None)
 
    Computes an explanation of ill conditioning for the basis matrix associated
    with the LP model in the first argument.   Writes the explanation to an LP
@@ -39,6 +39,8 @@ API Reference
 		      "RLS":       Two norm regularization of subproblem objective.
    :param smalltol:   Optional tolerance below which ill conditioning certificate values are all treated as zero, i.e., the row or column associated with the value is filtered out of the explanation.  If left at the default of 1e-13, row or column norms and machine precision will be incorporated into the filtering decision.
    :param submatrix:  Optional flag to try to postprocess the explanation down to a smaller submatrix.   Default is False.
+   :param filename:   Optional name of the file that will contain the explanation.  If omitted, the
+                      file name is derived from the model name and the explanation type.
    :return:           A Gurobi model object containing the basis matrix rows or columns in the explanation that was written to an LP or MPS file.
 
 .. _APIangle_explainLabel:

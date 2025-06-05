@@ -73,6 +73,9 @@ gma.kappa_explain(model, expltype="ROWS")
 # column-based explanation
 gma.kappa_explain(model, expltype="COLS")
 
+# custom output file name
+gma.kappa_explain(model, filename="myname.lp")
+
 # angle-based explanation (only looks for pairs of rows or columns
 # that cause ill-conditioning.
 gma.angle_explain(model)
@@ -139,6 +142,16 @@ Other useful resources to get started:
 We value any level of experience in using Gurobi Model Analyzer and would like to encourage you to
 contribute directly to this project. Please see the [Contributing Guide](CONTRIBUTING.md) for more information.
 
+
+## Running the tests
+Install the package and execute the unit tests from the project root:
+
+```console
+python -m pip install .
+python -m unittest discover -v
+```
+
+This runs all tests under the `tests/` directory.
 
 ## Submitting a Pull Request
 Before opening a Pull Request, have a look at the full
