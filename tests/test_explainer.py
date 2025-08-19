@@ -3,7 +3,7 @@ import pathlib
 import os
 
 import gurobipy as gp
-from gurobi_modelanalyzer import kappa_explain
+from gurobi_modelanalyzer import kappa_explain, set_env
 
 here = pathlib.Path(__file__).parent
 cwd = pathlib.Path(os.getcwd())
@@ -98,3 +98,25 @@ class TestExplainer(unittest.TestCase):
         list1, list2, model = kappa_explain(self.model, method="ANGLES")
         assert list1 != None and list2 != None and model != None
         print("Angle test completed.")
+
+
+class TestExplainerCS(TestExplainer):
+    def setUp(self):
+        self.clean()
+
+        # monkeypatch a JobID parameter, so we can test the manual copy functionality
+        #  needed for compute servers
+        _old_getParam = gp.Env.getParam
+
+        def getParam(env, name):
+            if name == "JobID":
+                return "xx"
+            return _old_getParam(env, name)
+
+        setattr(gp.Env, "getParam", getParam)
+
+        self.env = gp.Env()
+        set_env(self.env)
+        self.mip_model = gp.read(str(here / "dataset" / "p0033.lp"), env=self.env)
+        self.model = self.mip_model.relax()
+        self.model.ModelName = "testmodel"
