@@ -5,6 +5,7 @@ from .results_analyzer import (
     angle_explain,
     matrix_bitmap,
     converttofractions,
+    set_env,
 )
 
 from .solcheck import SolCheck
