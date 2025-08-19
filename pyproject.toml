@@ -25,6 +25,7 @@ classifiers = [
 dependencies = [
   "gurobipy",
   "numpy",
+  "scipy",
 ]
 dynamic = ["version"]
 
