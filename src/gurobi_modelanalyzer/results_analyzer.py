@@ -49,10 +49,24 @@ _config = Config()
 
 
 def set_env(env):
+    """
+    The functionality provided by this package requires new models to be created.
+    Users can set the Gurobi environment for these models using this function.
+
+    Parameters
+    ----------
+    env : gurobipy.Env
+        An environment to use by default when constructing models.
+    """
     _config.env = env
 
 
 def _make_copy(model):
+    """Model.copy will not currently work with compute server environments.
+
+    This function returns a new model.  It will defer to Model.copy if the environment is not CS or IC,
+    but if it is then it will create a new model from scratch to replicate the Model.copy function.
+    """
     if model._env.getParam("JobID") == "":
         return model.copy()
     A = model.getA()
