@@ -76,6 +76,7 @@ def _make_copy(model):
     mnew.ModelSense = model.ModelSense
     x = mnew.addMVar(
         model.NumVars,
+        vtype=model.vType,
         lb=model.LB,
         ub=model.UB,
         obj=model.obj,
