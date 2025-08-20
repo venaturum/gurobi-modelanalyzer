@@ -144,6 +144,8 @@ def kappa_explain(
                           written.  By default the name consists of the
                           model name suffixed by "_kappaexplain" with an
                           extension determined by the explanation type.
+    env        (optional) A gurobipy.Env to use when constructing auxiliary
+                          models.  Will override any environment set by `set_env`.
     Returns:              For all method settings except ANGLES, returns
                           the model that consists of the explanation.
                           If the method is ANGLES, returns a list of tuples
@@ -1336,6 +1338,8 @@ def angle_explain(model, howmany=1, partol=1e-6, env=_config.env):
                           relative tolerance when comparing the inner
                           product of two vectors with the product of their
                           L1 norms.
+    env        (optional) A gurobipy.Env to use when constructing auxiliary
+                          models.  Will override any environment set by `set_env`.
     Returns:              returns a list of tuples of the almost parallel
                           rows and almost parallel columns, and the model
                           associated with the basis matrix containing those
