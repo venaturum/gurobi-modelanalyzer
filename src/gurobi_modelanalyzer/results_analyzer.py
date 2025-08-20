@@ -98,7 +98,7 @@ def kappa_explain(
     smalltol=DEFSMALLTOL,
     submatrix=False,
     filename=None,
-    env=_config.env,
+    env=None,
 ):
     #
     #   Help function info
@@ -157,6 +157,9 @@ def kappa_explain(
     if model.IsMIP or model.IsQP or model.IsQCP:
         print("Ill Conditioning explainer only operates on LPs.")
         return None
+
+    env = _config.env if env is None else env
+
     if _debug != OFF:
         if _debugger != OFF:
             import pdb
@@ -1313,8 +1316,7 @@ def split_quadexpr(quadexpr, newvardict):
 #   values <= 0 indicate report all.  TODO:  This should be callable
 #   by the user, so it needs help info.
 #
-def angle_explain(model, howmany=1, partol=1e-6, env=_config.env):
-    #
+def angle_explain(model, howmany=1, partol=1e-6, env=None):
     #   Help function info
     #
     """Specialized ill conditioning explainer for finding pairs of near
@@ -1344,6 +1346,8 @@ def angle_explain(model, howmany=1, partol=1e-6, env=_config.env):
                           rows and almost parallel columns, and the model
                           associated with the basis matrix containing those
                           almost parallel rows or columns."""
+
+    env = _config.env if env is None else env
 
     if _debug != OFF:
         if _debugger != OFF:
