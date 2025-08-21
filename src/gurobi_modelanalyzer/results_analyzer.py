@@ -41,53 +41,6 @@ COMBINEDROW = "GRB_Combined_Row"
 COMBINEDCOL = "GRB_Combined_Column"
 
 
-class Config:
-    env = None
-
-
-_config = Config()
-
-
-def set_env(env):
-    """
-    The functionality provided by this package requires new models to be created.
-    Users can set the Gurobi environment for these models using this function.
-
-    Parameters
-    ----------
-    env : gurobipy.Env
-        An environment to use by default when constructing models.
-    """
-    _config.env = env
-
-
-def _make_copy(model):
-    """Model.copy will not currently work with compute server environments.
-
-    This function returns a new model.  It will defer to Model.copy if the environment is not CS or IC,
-    but if it is then it will create a new model from scratch to replicate the Model.copy function.
-    """
-    if model._env.getParam("JobID") == "":
-        return model.copy()
-    A = model.getA()
-    sense = model.Sense
-    RHS = model.RHS
-    mnew = gp.Model(env=model._env)
-    mnew.ModelSense = model.ModelSense
-    x = mnew.addMVar(
-        model.NumVars,
-        vtype=model.vType,
-        lb=model.LB,
-        ub=model.UB,
-        obj=model.obj,
-        name=model.VarName,
-    )
-    c = mnew.addMConstr(A, x, sense, RHS)
-    mnew.setAttr("ConstrName", c.tolist(), model.ConstrName)
-    mnew.update()
-    return mnew
-
-
 def kappa_explain(
     model,
     data=None,
@@ -159,7 +112,7 @@ def kappa_explain(
         print("Ill Conditioning explainer only operates on LPs.")
         return None
 
-    env = _config.env if env is None else env
+    env = common._config.env if env is None else env
 
     if _debug != OFF:
         if _debugger != OFF:
@@ -345,7 +298,7 @@ def kappa_explain(
     yvars = None
     if expltype == BYROWS:
         yvars = explmodel.getVars()[0:nbas]
-        resmodel = _make_copy(model)
+        resmodel = common._make_copy(model)
         #
         # Need original model basis statuses as well in order to compute
         # rhs values b - A_Nx_N for the constraints in the explanation
@@ -481,7 +434,7 @@ def kappa_explain(
         refine_output(resmodel, yvaldict, expltype, submatrix)
     else:  # Column based explanation
         yvars = explmodel.getVars()[0:nbas]
-        resmodel = _make_copy(explmodel)
+        resmodel = common._make_copy(explmodel)
         resvars = resmodel.getVars()
         resvardict = {}
         delvars = []
@@ -610,7 +563,7 @@ def extract_basis(
     modeltype=BYROWS,
     method=DEFAULT,
     condthresh=1e10,
-    env=_config.env,
+    env=None,
 ):
     Singflag = False
     #
@@ -1348,7 +1301,7 @@ def angle_explain(model, howmany=1, partol=1e-6, env=None):
                           associated with the basis matrix containing those
                           almost parallel rows or columns."""
 
-    env = _config.env if env is None else env
+    env = common._config.env if env is None else env
 
     if _debug != OFF:
         if _debugger != OFF:

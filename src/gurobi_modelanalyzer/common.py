@@ -3,11 +3,61 @@ from collections import defaultdict
 import math
 
 
+class Config:
+    env = None
+
+
+_config = Config()
+
+
+def set_env(env):
+    """
+    The functionality provided by this package requires new models to be created.
+    Users can set the Gurobi environment for these models using this function.
+
+    Parameters
+    ----------
+    env : gurobipy.Env
+        An environment to use by default when constructing models.
+    """
+    _config.env = env
+
+
 def get_vtype(var):
     if var.VType == gp.GRB.INTEGER and var.LB >= 0 and var.UB <= 1:
         return gp.GRB.BINARY
     else:
         return var.VType
+
+
+def _make_copy_from_scratch(model):
+    # This function returns creates a new model from scratch to replicate the Model.copy function.
+    A = model.getA()
+    sense = model.Sense
+    RHS = model.RHS
+    mnew = gp.Model(env=model._env)
+    mnew.ModelSense = model.ModelSense
+    x = mnew.addMVar(
+        model.NumVars,
+        vtype=model.vType,
+        lb=model.LB,
+        ub=model.UB,
+        obj=model.obj,
+        name=model.VarName,
+    )
+    c = mnew.addMConstr(A, x, sense, RHS)
+    mnew.setAttr("ConstrName", c.tolist(), model.ConstrName)
+    mnew.update()
+    return mnew
+
+
+def _make_copy(model):
+    # Model.copy will not currently work with compute server environments.
+    #  This function returns a new model.  It will defer to Model.copy if the environment is not CS or IC.
+    #  Otherwise it will return a copy created from scratch to replicate the Model.copy function.
+    if model._env.getParam("JobID") == "":
+        return model.copy()
+    return _make_copy_from_scratch(model)
 
 
 def max_value(variable, coefficient):

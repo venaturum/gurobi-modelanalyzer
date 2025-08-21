@@ -4,7 +4,7 @@ import os
 
 import gurobipy as gp
 from gurobi_modelanalyzer import kappa_explain, set_env
-from gurobi_modelanalyzer.results_analyzer import _make_copy
+from gurobi_modelanalyzer import common
 
 here = pathlib.Path(__file__).parent
 cwd = pathlib.Path(os.getcwd())
@@ -100,36 +100,23 @@ class TestExplainer(unittest.TestCase):
         assert list1 != None and list2 != None and model != None
         print("Angle test completed.")
 
-    def test_copy_function(self):
-        copy_model = _make_copy(self.mip_model)
-        fingerprint = copy_model.Fingerprint
-        copy_model.close()
-        assert fingerprint == self.mip_model.Fingerprint
 
-
-class TestExplainerCopyFunction(unittest.TestCase):
+class TestCopyFunction(unittest.TestCase):
     def setUp(self):
-        # monkeypatch a JobID parameter, so we can test the manual copy functionality
-        #  needed for compute servers
-        _old_getParam = gp.Env.getParam
-
-        def getParam(env, name):
-            if name == "JobID":
-                return "xx"
-            return _old_getParam(env, name)
-
-        setattr(gp.Env, "getParam", getParam)
-
         self.env = gp.Env()
-        set_env(self.env)
         self.mip_model = gp.read(str(here / "dataset" / "glass4.mps"), env=self.env)
 
     def test_copy_function(self):
-        copy_model = _make_copy(self.mip_model)
+        copy_model = common._make_copy_from_scratch(self.mip_model)
         fingerprint = copy_model.Fingerprint
         copy_model.close()
         assert fingerprint == self.mip_model.Fingerprint
 
+    def test_setenv(self):
+        set_env(self.env)
+        assert common._config.env == self.env
+
     def tearDown(self):
+        set_env(None)
         self.mip_model.close()
         self.env.close()
