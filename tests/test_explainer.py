@@ -3,7 +3,7 @@ import pathlib
 import os
 
 import gurobipy as gp
-from gurobi_modelanalyzer import kappa_explain, set_env
+from gurobi_modelanalyzer import kappa_explain, set_env, _config
 from gurobi_modelanalyzer import common
 
 here = pathlib.Path(__file__).parent
@@ -113,8 +113,9 @@ class TestCopyFunction(unittest.TestCase):
         assert fingerprint == self.mip_model.Fingerprint
 
     def test_setenv(self):
+        assert _config.get_env(self.env) == self.env
         set_env(self.env)
-        assert common._config.env == self.env
+        assert _config.get_env(None) == self.env
 
     def tearDown(self):
         set_env(None)

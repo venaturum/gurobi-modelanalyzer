@@ -4,23 +4,28 @@ import math
 
 
 class Config:
-    env = None
+    def __init__(self):
+        self.env = None
+
+    def set_env(self, env):
+        """
+        The functionality provided by this package requires new models to be created.
+        Users can set the Gurobi environment for these models using this function.
+
+        Parameters
+        ----------
+        env : gurobipy.Env
+            An environment to use by default when constructing models.
+        """
+        self.env = env
+
+    def get_env(self, env=None):
+        if env is None:
+            return self.env
+        return env
 
 
 _config = Config()
-
-
-def set_env(env):
-    """
-    The functionality provided by this package requires new models to be created.
-    Users can set the Gurobi environment for these models using this function.
-
-    Parameters
-    ----------
-    env : gurobipy.Env
-        An environment to use by default when constructing models.
-    """
-    _config.env = env
 
 
 def get_vtype(var):

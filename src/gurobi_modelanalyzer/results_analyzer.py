@@ -6,7 +6,7 @@ import os
 import math
 import time
 
-from gurobi_modelanalyzer import common
+from gurobi_modelanalyzer import common, _config
 
 
 #
@@ -112,7 +112,7 @@ def kappa_explain(
         print("Ill Conditioning explainer only operates on LPs.")
         return None
 
-    env = common._config.env if env is None else env
+    env = _config.get_env(env)
 
     if _debug != OFF:
         if _debugger != OFF:
@@ -1301,7 +1301,7 @@ def angle_explain(model, howmany=1, partol=1e-6, env=None):
                           associated with the basis matrix containing those
                           almost parallel rows or columns."""
 
-    env = common._config.env if env is None else env
+    env = _config.get_env(env)
 
     if _debug != OFF:
         if _debugger != OFF:
