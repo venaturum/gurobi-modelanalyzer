@@ -1,5 +1,7 @@
 __version__ = "v2.1.0"
 
+from .common import _config
+
 from .results_analyzer import (
     kappa_explain,
     angle_explain,
@@ -8,3 +10,5 @@ from .results_analyzer import (
 )
 
 from .solcheck import SolCheck
+
+set_env = _config.set_env

@@ -3,7 +3,8 @@ import pathlib
 import os
 
 import gurobipy as gp
-from gurobi_modelanalyzer import kappa_explain
+from gurobi_modelanalyzer import kappa_explain, set_env, _config
+from gurobi_modelanalyzer import common
 
 here = pathlib.Path(__file__).parent
 cwd = pathlib.Path(os.getcwd())
@@ -98,3 +99,25 @@ class TestExplainer(unittest.TestCase):
         list1, list2, model = kappa_explain(self.model, method="ANGLES")
         assert list1 != None and list2 != None and model != None
         print("Angle test completed.")
+
+
+class TestCopyFunction(unittest.TestCase):
+    def setUp(self):
+        self.env = gp.Env()
+        self.mip_model = gp.read(str(here / "dataset" / "glass4.mps"), env=self.env)
+
+    def test_copy_function(self):
+        copy_model = common._make_copy_from_scratch(self.mip_model)
+        fingerprint = copy_model.Fingerprint
+        copy_model.close()
+        assert fingerprint == self.mip_model.Fingerprint
+
+    def test_setenv(self):
+        assert _config.get_env(self.env) == self.env
+        set_env(self.env)
+        assert _config.get_env(None) == self.env
+
+    def tearDown(self):
+        set_env(None)
+        self.mip_model.close()
+        self.env.close()

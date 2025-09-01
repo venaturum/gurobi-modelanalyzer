@@ -6,7 +6,7 @@ import os
 import math
 import time
 
-from gurobi_modelanalyzer import common
+from gurobi_modelanalyzer import common, _config
 
 
 #
@@ -52,6 +52,7 @@ def kappa_explain(
     smalltol=DEFSMALLTOL,
     submatrix=False,
     filename=None,
+    env=None,
 ):
     #
     #   Help function info
@@ -97,6 +98,8 @@ def kappa_explain(
                           written.  By default the name consists of the
                           model name suffixed by "_kappaexplain" with an
                           extension determined by the explanation type.
+    env        (optional) A gurobipy.Env to use when constructing auxiliary
+                          models.  Will override any environment set by `set_env`.
     Returns:              For all method settings except ANGLES, returns
                           the model that consists of the explanation.
                           If the method is ANGLES, returns a list of tuples
@@ -108,6 +111,9 @@ def kappa_explain(
     if model.IsMIP or model.IsQP or model.IsQCP:
         print("Ill Conditioning explainer only operates on LPs.")
         return None
+
+    env = _config.get_env(env)
+
     if _debug != OFF:
         if _debugger != OFF:
             import pdb
@@ -153,7 +159,7 @@ def kappa_explain(
     modcons = model.getConstrs()
 
     if method == ANGLES:
-        return angle_explain(model, 1)
+        return angle_explain(model, 1, env=env)
     #
     #   Threshold for ill conditioning is ratio of current feasibility
     #   tolerance divided by the current machine precision.  Calculate
@@ -166,7 +172,7 @@ def kappa_explain(
 
     splitfreevars = method == LASSO
     explmodel, splitvardict, RSinginfo, CSinginfo, Singflag = extract_basis(
-        model, modvars, modcons, expltype, method, condthresh
+        model, modvars, modcons, expltype, method, condthresh, env=env
     )
     if explmodel == None:  # Didn't find a basis for original model
         return None  # Nothing to explain
@@ -180,7 +186,9 @@ def kappa_explain(
         # with a huge ratio among two entries.  Use a separate, simpler
         # routine to create the explanation.
         #
-        resmodel, maxmult, minmult = build_singleton_resmodel(explmodel, expltype)
+        resmodel, maxmult, minmult = build_singleton_resmodel(
+            explmodel, expltype, env=env
+        )
         illcond_report(resmodel, model.ModelName, expltype, maxmult, minmult, filename)
         return resmodel
     #
@@ -290,7 +298,7 @@ def kappa_explain(
     yvars = None
     if expltype == BYROWS:
         yvars = explmodel.getVars()[0:nbas]
-        resmodel = model.copy()
+        resmodel = common._make_copy(model)
         #
         # Need original model basis statuses as well in order to compute
         # rhs values b - A_Nx_N for the constraints in the explanation
@@ -426,7 +434,7 @@ def kappa_explain(
         refine_output(resmodel, yvaldict, expltype, submatrix)
     else:  # Column based explanation
         yvars = explmodel.getVars()[0:nbas]
-        resmodel = explmodel.copy()
+        resmodel = common._make_copy(explmodel)
         resvars = resmodel.getVars()
         resvardict = {}
         delvars = []
@@ -549,7 +557,13 @@ def kappa_explain(
 #   This is an infeasible model for any nonsingular basis matrix B.
 #
 def extract_basis(
-    model, modvars, modcons, modeltype=BYROWS, method=DEFAULT, condthresh=1e10
+    model,
+    modvars,
+    modcons,
+    modeltype=BYROWS,
+    method=DEFAULT,
+    condthresh=1e10,
+    env=None,
 ):
     Singflag = False
     #
@@ -606,7 +620,7 @@ def extract_basis(
     #   In those cases, just return D1 or D2 as the basis model,
     #   resulting in a much easier computation.
     #
-    explmodel = gp.Model("basismodel")
+    explmodel = gp.Model("basismodel", env=env)
     RSinginfo = []  # list of tuples for row singletons
     CSinginfo = []  # list of tuples for column singletons
 
@@ -643,7 +657,7 @@ def extract_basis(
             # for the explanation
             #
             explmodel.dispose()
-            explmodel = gp.Model("rowsingleton_basismodel")
+            explmodel = gp.Model("rowsingleton_basismodel", env=env)
             build_explmodel(
                 model, explmodel, [minvar, maxvar], [mincon, maxcon], None, None, BYROWS
             )
@@ -702,7 +716,7 @@ def extract_basis(
             # for the explanation
             #
             explmodel.dispose()
-            explmodel = gp.Model("colsingleton_basismodel")
+            explmodel = gp.Model("colsingleton_basismodel", env=env)
             build_explmodel(
                 model, explmodel, [minvar, maxvar], [mincon, maxcon], None, None, BYCOLS
             )
@@ -1006,7 +1020,7 @@ def build_explmodel(
 #   on the explainer model, which already has an optimal solution
 #   provided since the variables are fixed.
 #
-def build_singleton_resmodel(explmodel, expltype):
+def build_singleton_resmodel(explmodel, expltype, env):
     vars = explmodel.getVars()
     cons = explmodel.getConstrs()
     #
@@ -1039,7 +1053,7 @@ def build_singleton_resmodel(explmodel, expltype):
         # (mult=0.9999999999942399)c2931: - 0.000576 cons(6,1) = 0
         # (mult=5.759999999966822e-12)c14960: - 1e+08 beginFamily(0,3) = 0
         #
-        resmodel = gp.Model()
+        resmodel = gp.Model(env=env)
         maxconname = "(mult=" + str(maxmult) + ")" + maxvar.VarName
         col = explmodel.getCol(maxvar)
         con0 = col.getConstr(0)
@@ -1116,7 +1130,9 @@ def kappa_stats(model, data, KappaExact):
 #
 #   Write out the final explanation, print summary info.
 #
-def illcond_report(resmodel, modelname, expltype, maxabsmult, minabsmult, filename=None):
+def illcond_report(
+    resmodel, modelname, expltype, maxabsmult, minabsmult, filename=None
+):
     resmodel.setObjective(0)
     if filename is None:
         if modelname == "":
@@ -1254,8 +1270,7 @@ def split_quadexpr(quadexpr, newvardict):
 #   values <= 0 indicate report all.  TODO:  This should be callable
 #   by the user, so it needs help info.
 #
-def angle_explain(model, howmany=1, partol=1e-6):
-    #
+def angle_explain(model, howmany=1, partol=1e-6, env=None):
     #   Help function info
     #
     """Specialized ill conditioning explainer for finding pairs of near
@@ -1279,10 +1294,14 @@ def angle_explain(model, howmany=1, partol=1e-6):
                           relative tolerance when comparing the inner
                           product of two vectors with the product of their
                           L1 norms.
+    env        (optional) A gurobipy.Env to use when constructing auxiliary
+                          models.  Will override any environment set by `set_env`.
     Returns:              returns a list of tuples of the almost parallel
                           rows and almost parallel columns, and the model
                           associated with the basis matrix containing those
                           almost parallel rows or columns."""
+
+    env = _config.get_env(env)
 
     if _debug != OFF:
         if _debugger != OFF:
@@ -1292,7 +1311,7 @@ def angle_explain(model, howmany=1, partol=1e-6):
     modcons = model.getConstrs()
     modvars = model.getVars()
     explmodel, splitvardict, junk1, junk2, junk3 = extract_basis(
-        model, modvars, modcons, None, False
+        model, modvars, modcons, None, False, env=env
     )
     if explmodel == None:  # No basis for original model found.
         return None, None, None  # Nothing to explain
