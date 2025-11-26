@@ -36,6 +36,15 @@ jobs:
       - name: Run pytest
         run: uv run pytest ./tests
 
+  test-wheels:
+    # test-wheels triggers building of artifacts
+    uses: ./.github/workflows/test-wheels.yml
+    needs: [unit-tests]
+  publish-pypi:
+    uses: ./.github/workflows/publish-pypi.yml
+    needs: [test-wheels]
+    secrets: inherit
+
   # pre-commit:
   #   name: Lint / format (via pre-commit)
   #   runs-on: ubuntu-latest
